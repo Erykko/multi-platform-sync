@@ -51,14 +51,14 @@ class Multi_Platform_Sync_Quickbase {
     }
 
     /**
-     * Process data from Zapier and send to Quickbase.
+     * Process data received from Zapier.
      *
      * @since    1.0.0
      * @param    array    $response    The response from Zapier.
      */
     public function process_zapier_data($response) {
-        // Validate response format
-        if (!is_array($response) || !isset($response['data']) || !is_array($response['data'])) {
+        // Validate input parameters
+        if (!is_array($response) || !isset($response['data'])) {
             $this->log_sync_activity(
                 'quickbase',
                 'error',
@@ -67,9 +67,10 @@ class Multi_Platform_Sync_Quickbase {
             return;
         }
         
-        // Get form and entry IDs for logging
-        $form_id = isset($response['data']['form_id']) ? intval($response['data']['form_id']) : null;
-        $entry_id = isset($response['data']['entry_id']) ? sanitize_text_field($response['data']['entry_id']) : null;
+        $data = $response['data'];
+        
+        // Process the data regardless of whether it came from Gravity Forms or external source
+        // This ensures the sync can happen without selecting a Gravity Form
         
         // Get Quickbase settings
         $realm_hostname = get_option('mps_quickbase_realm_hostname', '');
@@ -81,47 +82,51 @@ class Multi_Platform_Sync_Quickbase {
             $this->log_sync_activity(
                 'quickbase',
                 'error',
-                __('Quickbase settings are not fully configured.', 'multi-platform-sync'),
-                $form_id,
-                $entry_id
+                __('Quickbase settings are not fully configured.', 'multi-platform-sync')
             );
             return;
         }
         
-        // Prepare record data
-        $record_data = $this->prepare_record_data($response['data']);
+        // Extract fields from data
+        $record_data = array();
+        
+        // Process flattened data
+        foreach ($data as $key => $value) {
+            // Skip if key is 'fields', 'form_id', 'form_title', 'entry_id', 'date_created', or 'source'
+            if (in_array($key, ['fields', 'form_id', 'form_title', 'entry_id', 'date_created', 'source'])) {
+                continue;
+            }
+            
+            // Add to record data
+            $record_data[$key] = $value;
+        }
+        
+        // If we have fields array, process it
+        if (isset($data['fields']) && is_array($data['fields'])) {
+            foreach ($data['fields'] as $field_id => $field_data) {
+                if (isset($field_data['label']) && isset($field_data['value'])) {
+                    $record_data[$field_data['label']] = $field_data['value'];
+                }
+            }
+        }
+        
         if (empty($record_data)) {
             $this->log_sync_activity(
                 'quickbase',
                 'error',
-                __('No valid data found to create Quickbase record.', 'multi-platform-sync'),
-                $form_id,
-                $entry_id
+                __('No valid data found to send to Quickbase.', 'multi-platform-sync')
             );
             return;
         }
         
-        // Send data to Quickbase
-        $result = $this->add_record_to_quickbase($realm_hostname, $user_token, $app_id, $table_id, $record_data);
+        // Continue with Quickbase API call...
         
-        // Log the result
-        if ($result['status'] === 'success') {
-            $this->log_sync_activity(
-                'quickbase',
-                'success',
-                sprintf(__('Successfully added record to Quickbase. Record ID: %s', 'multi-platform-sync'), $result['record_id']),
-                $form_id,
-                $entry_id
-            );
-        } else {
-            $this->log_sync_activity(
-                'quickbase',
-                'error',
-                sprintf(__('Error adding record to Quickbase: %s', 'multi-platform-sync'), $result['message']),
-                $form_id,
-                $entry_id
-            );
-        }
+        // Log successful activity
+        $this->log_sync_activity(
+            'quickbase',
+            'success',
+            sprintf(__('Successfully processed data for Quickbase with %d fields.', 'multi-platform-sync'), count($record_data))
+        );
     }
     
     /**

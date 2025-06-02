@@ -100,6 +100,11 @@ class Multi_Platform_Sync_Zapier {
             ), 400);
         }
         
+        // Add a source indicator to show data is from external webhook
+        if (!isset($data['source'])) {
+            $data['source'] = 'external_webhook';
+        }
+        
         // Log the received data
         $this->log_sync_activity(
             'webhook',

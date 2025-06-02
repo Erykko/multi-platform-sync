@@ -485,7 +485,16 @@ class Multi_Platform_Sync_Admin {
      * @since    1.0.0
      */
     public function gravity_forms_settings_section_callback() {
-        echo '<p>' . esc_html__('Select which Gravity Forms to sync with external platforms.', 'multi-platform-sync') . '</p>';
+        // Check if Gravity Forms Zapier add-on is detected
+        if (get_option('mps_gf_zapier_addon_detected', false)) {
+            echo '<div class="notice notice-info inline"><p>';
+            echo esc_html__('Form selection is not needed when using the Gravity Forms Zapier Add-on. The add-on handles which forms send data to Zapier.', 'multi-platform-sync');
+            echo '</p></div>';
+        } else {
+            echo '<p>' . esc_html__('Select which Gravity Forms to sync with external platforms.', 'multi-platform-sync') . '</p>';
+            echo '<p><strong>' . esc_html__('Note:', 'multi-platform-sync') . '</strong> ';
+            echo esc_html__('This selection is only needed if you want to send Gravity Forms data directly to Zapier. If you\'re receiving data from external sources through Zapier, you don\'t need to select any forms here.', 'multi-platform-sync') . '</p>';
+        }
     }
 
     /**

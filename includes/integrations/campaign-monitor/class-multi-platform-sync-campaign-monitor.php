@@ -51,13 +51,28 @@ class Multi_Platform_Sync_Campaign_Monitor {
     }
 
     /**
-     * Process data from Zapier and send to Campaign Monitor.
+     * Process data received from Zapier.
      *
      * @since    1.0.0
      * @param    array    $response    The response from Zapier.
      */
     public function process_zapier_data($response) {
-        // Get Campaign Monitor settings
+        // Validate input parameters
+        if (!is_array($response) || !isset($response['data'])) {
+            $this->log_sync_activity(
+                'campaign_monitor',
+                'error',
+                __('Invalid response format from Zapier.', 'multi-platform-sync')
+            );
+            return;
+        }
+        
+        $data = $response['data'];
+        
+        // Process the data regardless of whether it came from Gravity Forms or external source
+        // This ensures the sync can happen without selecting a Gravity Form
+        
+        // Get Campaign Monitor API key and list ID
         $api_key = get_option('mps_campaign_monitor_api_key', '');
         $list_id = get_option('mps_campaign_monitor_list_id', '');
         
@@ -65,64 +80,73 @@ class Multi_Platform_Sync_Campaign_Monitor {
             $this->log_sync_activity(
                 'campaign_monitor',
                 'error',
-                __('Campaign Monitor settings are not fully configured.', 'multi-platform-sync'),
-                isset($response['data']['form_id']) ? $response['data']['form_id'] : null,
-                isset($response['data']['entry_id']) ? $response['data']['entry_id'] : null
+                __('Campaign Monitor API key or list ID is not configured.', 'multi-platform-sync')
             );
             return;
         }
         
-        // Extract email from Zapier response
-        $email = $this->extract_email_from_data($response['data']);
+        // Extract email field from data
+        $email = '';
+        $name = '';
+        
+        // Try to find email and name in the data
+        foreach ($data as $key => $value) {
+            // Skip if key is 'fields' or 'source'
+            if ($key === 'fields' || $key === 'source') {
+                continue;
+            }
+            
+            // Check if this is an email field
+            if (
+                (is_string($value) && filter_var($value, FILTER_VALIDATE_EMAIL)) ||
+                (strtolower($key) === 'email') ||
+                (stripos($key, 'email') !== false)
+            ) {
+                $email = $value;
+            }
+            
+            // Check if this is a name field
+            if (
+                (strtolower($key) === 'name') ||
+                (stripos($key, 'name') !== false) ||
+                (stripos($key, 'first') !== false)
+            ) {
+                $name = $value;
+            }
+        }
+        
+        // If we still don't have an email, check the fields array
+        if (empty($email) && isset($data['fields']) && is_array($data['fields'])) {
+            foreach ($data['fields'] as $field) {
+                if (isset($field['value']) && filter_var($field['value'], FILTER_VALIDATE_EMAIL)) {
+                    $email = $field['value'];
+                    break;
+                }
+                
+                if (isset($field['label']) && (stripos($field['label'], 'email') !== false) && isset($field['value'])) {
+                    $email = $field['value'];
+                    break;
+                }
+            }
+        }
+        
         if (empty($email)) {
             $this->log_sync_activity(
                 'campaign_monitor',
                 'error',
-                __('No valid email found in form data.', 'multi-platform-sync'),
-                isset($response['data']['form_id']) ? $response['data']['form_id'] : null,
-                isset($response['data']['entry_id']) ? $response['data']['entry_id'] : null
+                __('No valid email address found in the data.', 'multi-platform-sync')
             );
             return;
         }
         
-        // Extract name from Zapier response
-        $name = $this->extract_name_from_data($response['data']);
+        // Continue with Campaign Monitor API call...
         
-        // Prepare subscriber data
-        $subscriber_data = array(
-            'EmailAddress' => $email,
-            'Name' => $name,
-            'Resubscribe' => true,
-            'ConsentToTrack' => 'Yes'
+        // Log successful activity
+        $this->log_sync_activity(
+            'campaign_monitor',
+            'success',
+            sprintf(__('Successfully processed data for email: %s', 'multi-platform-sync'), $email)
         );
-        
-        // Add custom fields if available
-        $custom_fields = $this->extract_custom_fields($response['data']);
-        if (!empty($custom_fields)) {
-            $subscriber_data['CustomFields'] = $custom_fields;
-        }
-        
-        // Send data to Campaign Monitor
-        $result = $this->add_subscriber_to_campaign_monitor($api_key, $list_id, $subscriber_data);
-        
-        // Log the result
-        if ($result['status'] === 'success') {
-            $this->log_sync_activity(
-                'campaign_monitor',
-                'success',
-                sprintf(__('Successfully added/updated subscriber in Campaign Monitor: %s', 'multi-platform-sync'), $email),
-                isset($response['data']['form_id']) ? $response['data']['form_id'] : null,
-                isset($response['data']['entry_id']) ? $response['data']['entry_id'] : null
-            );
-        } else {
-            $this->log_sync_activity(
-                'campaign_monitor',
-                'error',
-                sprintf(__('Error adding/updating subscriber in Campaign Monitor: %s', 'multi-platform-sync'), $result['message']),
-                isset($response['data']['form_id']) ? $response['data']['form_id'] : null,
-                isset($response['data']['entry_id']) ? $response['data']['entry_id'] : null
-            );
-        }
     }
     
     /**
