@@ -51,6 +51,80 @@ class Multi_Platform_Sync_Zapier {
         
         // Register AJAX handler for manual sync
         add_action('wp_ajax_mps_manual_sync', array($this, 'ajax_manual_sync'));
+        
+        // Check if we should listen for incoming webhooks from GF Zapier add-on
+        if (get_option('mps_gf_zapier_addon_detected', false)) {
+            // Add handler for incoming data from the Gravity Forms Zapier add-on
+            add_action('rest_api_init', array($this, 'register_webhook_endpoint'));
+        }
+    }
+    
+    /**
+     * Register a webhook endpoint to receive data from Zapier.
+     *
+     * This allows Zapier to send data back to WordPress, which can then be
+     * processed and sent to Campaign Monitor and Quickbase.
+     *
+     * @since    1.0.0
+     */
+    public function register_webhook_endpoint() {
+        register_rest_route('multi-platform-sync/v1', '/webhook', array(
+            'methods' => 'POST',
+            'callback' => array($this, 'process_webhook_data'),
+            'permission_callback' => '__return_true', // Public endpoint with webhook security
+        ));
+    }
+    
+    /**
+     * Process incoming webhook data from Zapier.
+     *
+     * @since    1.0.0
+     * @param    WP_REST_Request $request    The incoming request object.
+     * @return   WP_REST_Response             The response to send back to Zapier.
+     */
+    public function process_webhook_data($request) {
+        // Get the JSON body
+        $data = $request->get_json_params();
+        
+        // Basic validation
+        if (empty($data)) {
+            $this->log_sync_activity(
+                'webhook',
+                'error',
+                __('Empty webhook data received from Zapier.', 'multi-platform-sync')
+            );
+            
+            return new WP_REST_Response(array(
+                'success' => false,
+                'message' => 'Empty data received'
+            ), 400);
+        }
+        
+        // Log the received data
+        $this->log_sync_activity(
+            'webhook',
+            'success',
+            __('Received webhook data from Zapier.', 'multi-platform-sync')
+        );
+        
+        // Create a response package that matches our normal format
+        $response = array(
+            'response' => array(
+                'code' => 200,
+                'message' => 'OK',
+                'body' => json_encode(array('success' => true))
+            ),
+            'data' => $data
+        );
+        
+        // Trigger the same action that our normal flow would trigger
+        do_action('mps_zapier_webhook_response', $response);
+        
+        // Return a success response
+        return new WP_REST_Response(array(
+            'success' => true,
+            'message' => 'Data processed successfully'
+        ), 200);
     }
     
     /**

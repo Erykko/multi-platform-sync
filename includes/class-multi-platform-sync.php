@@ -109,6 +109,40 @@ class Multi_Platform_Sync {
     }
 
     /**
+     * Check if the Gravity Forms Zapier Add-on is active.
+     *
+     * @since    1.0.0
+     * @access   private
+     * @return   boolean  True if the add-on is active, false otherwise.
+     */
+    private function is_gravity_forms_zapier_addon_active() {
+        // Check if the GF_Zapier class exists (part of the Zapier Add-on)
+        if (class_exists('GF_Zapier')) {
+            return true;
+        }
+        
+        // Check for the addon in the active plugins list
+        $active_plugins = get_option('active_plugins', array());
+        foreach ($active_plugins as $plugin) {
+            if (strpos($plugin, 'gravityformszapier') !== false) {
+                return true;
+            }
+        }
+        
+        // If we're in a multisite, check network active plugins
+        if (is_multisite()) {
+            $network_plugins = get_site_option('active_sitewide_plugins', array());
+            foreach (array_keys($network_plugins) as $plugin) {
+                if (strpos($plugin, 'gravityformszapier') !== false) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    /**
      * Register all of the hooks related to Gravity Forms.
      *
      * @since    1.0.0
@@ -120,11 +154,23 @@ class Multi_Platform_Sync {
         $campaign_monitor = new Multi_Platform_Sync_Campaign_Monitor($this->get_plugin_name(), $this->get_version());
         $quickbase = new Multi_Platform_Sync_Quickbase($this->get_plugin_name(), $this->get_version());
         
-        // Register Gravity Forms hooks for form submission
-        $this->loader->add_action('gform_after_submission', $zapier, 'process_form_submission', 10, 2);
+        // Check if Gravity Forms Zapier add-on is active
+        $zapier_addon_active = $this->is_gravity_forms_zapier_addon_active();
         
-        // Manual sync action hook for admin-triggered syncs
-        $this->loader->add_action('mps_manual_sync', $zapier, 'process_manual_sync', 10, 1);
+        // Store this in an option so admin UI can access it
+        update_option('mps_gf_zapier_addon_detected', $zapier_addon_active);
+        
+        // Only register direct Gravity Forms to Zapier hooks if the add-on is not active
+        if (!$zapier_addon_active) {
+            // Register Gravity Forms hooks for form submission
+            $this->loader->add_action('gform_after_submission', $zapier, 'process_form_submission', 10, 2);
+            
+            // Manual sync action hook for admin-triggered syncs
+            $this->loader->add_action('mps_manual_sync', $zapier, 'process_manual_sync', 10, 1);
+        }
+        
+        // Always register the Zapier webhook response handlers for Campaign Monitor and Quickbase
+        // These will work with data from the Gravity Forms Zapier add-on or our own integration
         $this->loader->add_action('mps_zapier_webhook_response', $campaign_monitor, 'process_zapier_data', 10, 1);
         $this->loader->add_action('mps_zapier_webhook_response', $quickbase, 'process_zapier_data', 10, 1);
     }

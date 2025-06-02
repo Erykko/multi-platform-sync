@@ -80,11 +80,57 @@ class Multi_Platform_Sync_Admin {
     }
 
     /**
+     * Register admin notices.
+     *
+     * @since    1.0.0
+     */
+    public function register_admin_notices() {
+        // Check if we're on our plugin's page
+        $screen = get_current_screen();
+        if (!$screen || strpos($screen->id, $this->plugin_name) === false) {
+            return;
+        }
+        
+        // Check if Gravity Forms Zapier add-on is detected
+        if (get_option('mps_gf_zapier_addon_detected', false)) {
+            add_action('admin_notices', array($this, 'display_zapier_addon_notice'));
+        }
+    }
+    
+    /**
+     * Display notice about Gravity Forms Zapier add-on.
+     *
+     * @since    1.0.0
+     */
+    public function display_zapier_addon_notice() {
+        ?>
+        <div class="notice notice-info is-dismissible">
+            <p>
+                <strong><?php _e('Gravity Forms Zapier Add-on Detected', 'multi-platform-sync'); ?></strong>
+            </p>
+            <p>
+                <?php _e('The official Gravity Forms Zapier Add-on is active. Multi-Platform Sync has automatically configured itself to:', 'multi-platform-sync'); ?>
+            </p>
+            <ul style="list-style-type: disc; padding-left: 20px;">
+                <li><?php _e('Let the official add-on handle sending Gravity Forms data to Zapier', 'multi-platform-sync'); ?></li>
+                <li><?php _e('Continue processing data from Zapier to Campaign Monitor and Quickbase', 'multi-platform-sync'); ?></li>
+            </ul>
+            <p>
+                <?php _e('This prevents duplicate data being sent to Zapier and ensures compatibility.', 'multi-platform-sync'); ?>
+            </p>
+        </div>
+        <?php
+    }
+
+    /**
      * Add menu items to the admin dashboard.
      *
      * @since    1.0.0
      */
     public function add_admin_menu() {
+        // Register admin notices
+        $this->register_admin_notices();
+        
         // Main menu item
         add_menu_page(
             __('Multi-Platform Sync', 'multi-platform-sync'),
@@ -393,7 +439,21 @@ class Multi_Platform_Sync_Admin {
      * @since    1.0.0
      */
     public function zapier_settings_section_callback() {
-        echo '<p>' . esc_html__('Configure your Zapier webhook URL to send form data.', 'multi-platform-sync') . '</p>';
+        // Check if Gravity Forms Zapier add-on is detected
+        if (get_option('mps_gf_zapier_addon_detected', false)) {
+            echo '<div class="notice notice-info inline"><p>';
+            echo '<strong>' . esc_html__('Gravity Forms Zapier Add-on Detected', 'multi-platform-sync') . '</strong><br>';
+            echo esc_html__('The plugin is configured to use the official Gravity Forms Zapier Add-on for sending data to Zapier.', 'multi-platform-sync');
+            echo '</p></div>';
+            
+            echo '<p>' . esc_html__('To send data from Zapier back to this site (for Campaign Monitor and Quickbase integrations), use this webhook URL in your Zap:', 'multi-platform-sync') . '</p>';
+            
+            $webhook_url = rest_url('multi-platform-sync/v1/webhook');
+            echo '<input type="text" class="large-text code" readonly value="' . esc_url($webhook_url) . '" onclick="this.select();" />';
+            echo '<p class="description">' . esc_html__('Add this as a "Webhook" action step in your Zap to send data back to this site.', 'multi-platform-sync') . '</p>';
+        } else {
+            echo '<p>' . esc_html__('Configure your Zapier webhook URL to send form data.', 'multi-platform-sync') . '</p>';
+        }
     }
 
     /**
@@ -402,11 +462,21 @@ class Multi_Platform_Sync_Admin {
      * @since    1.0.0
      */
     public function zapier_webhook_url_render() {
-        $webhook_url = get_option('mps_zapier_webhook_url', '');
-        ?>
-        <input type="url" class="regular-text" name="mps_zapier_webhook_url" value="<?php echo esc_url($webhook_url); ?>" />
-        <p class="description"><?php esc_html_e('Enter the webhook URL provided by your Zapier Zap.', 'multi-platform-sync'); ?></p>
-        <?php
+        // Check if Gravity Forms Zapier add-on is detected
+        if (get_option('mps_gf_zapier_addon_detected', false)) {
+            echo '<p>' . esc_html__('This setting is not used when the Gravity Forms Zapier Add-on is active.', 'multi-platform-sync') . '</p>';
+            echo '<p>' . esc_html__('Configure your Zapier integration through the Gravity Forms Zapier Add-on settings.', 'multi-platform-sync') . '</p>';
+            
+            // Hidden field to preserve the value
+            $webhook_url = get_option('mps_zapier_webhook_url', '');
+            echo '<input type="hidden" name="mps_zapier_webhook_url" value="' . esc_attr($webhook_url) . '" />';
+        } else {
+            $webhook_url = get_option('mps_zapier_webhook_url', '');
+            ?>
+            <input type="url" class="regular-text" name="mps_zapier_webhook_url" value="<?php echo esc_url($webhook_url); ?>" />
+            <p class="description"><?php esc_html_e('Enter the webhook URL provided by your Zapier Zap.', 'multi-platform-sync'); ?></p>
+            <?php
+        }
     }
 
     /**
@@ -424,6 +494,21 @@ class Multi_Platform_Sync_Admin {
      * @since    1.0.0
      */
     public function gravity_forms_to_sync_render() {
+        // Check if Gravity Forms Zapier add-on is detected
+        if (get_option('mps_gf_zapier_addon_detected', false)) {
+            echo '<div class="notice notice-info inline"><p>';
+            echo esc_html__('When using the Gravity Forms Zapier Add-on, form selection is managed through the Gravity Forms Zapier Add-on settings.', 'multi-platform-sync');
+            echo '</p></div>';
+            
+            // Hidden field to preserve values
+            $selected_forms = get_option('mps_gravity_forms_to_sync', array());
+            foreach ($selected_forms as $form_id) {
+                echo '<input type="hidden" name="mps_gravity_forms_to_sync[]" value="' . esc_attr($form_id) . '" />';
+            }
+            
+            return;
+        }
+        
         if (!class_exists('GFForms')) {
             echo '<p>' . esc_html__('Gravity Forms is not installed or activated.', 'multi-platform-sync') . '</p>';
             return;
