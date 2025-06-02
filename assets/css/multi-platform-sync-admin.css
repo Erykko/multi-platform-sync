@@ -1,0 +1,241 @@
+/**
+ * Admin styles for Multi-Platform Sync plugin.
+ *
+ * Styles for admin UI components.
+ */
+
+/* Dashboard Layout */
+.mps-dashboard {
+    margin-top: 20px;
+}
+
+.mps-dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.mps-dashboard-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 20px;
+}
+
+.mps-dashboard-content .mps-card:first-child {
+    grid-column: 1 / -1;
+}
+
+/* Cards */
+.mps-card {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    padding: 20px;
+}
+
+.mps-card h3 {
+    margin-top: 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Status Indicators */
+.mps-status-item {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.mps-status-item .dashicons {
+    margin-right: 8px;
+}
+
+.mps-status-success {
+    background-color: #f0f8f0;
+    border-left: 4px solid #46b450;
+}
+
+.mps-status-warning {
+    background-color: #fef8ee;
+    border-left: 4px solid #ffb900;
+}
+
+.mps-status-error {
+    background-color: #fef0f0;
+    border-left: 4px solid #dc3232;
+}
+
+.mps-success {
+    color: #46b450;
+}
+
+.mps-error {
+    color: #dc3232;
+}
+
+/* Getting Started Section */
+.mps-getting-started ol {
+    margin-left: 20px;
+}
+
+.mps-getting-started li {
+    margin-bottom: 15px;
+}
+
+.mps-getting-started p {
+    margin-top: 5px;
+    color: #666;
+}
+
+/* View All Logs Link */
+.mps-view-all-logs {
+    text-align: right;
+    margin-top: 10px;
+}
+
+/* Settings Page */
+.mps-settings-container {
+    display: flex;
+    margin-top: 20px;
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.mps-settings-nav {
+    width: 200px;
+    background: #f5f5f5;
+    border-right: 1px solid #eee;
+}
+
+.mps-settings-nav ul {
+    margin: 0;
+    padding: 0;
+}
+
+.mps-settings-nav li {
+    margin: 0;
+}
+
+.mps-settings-nav a {
+    display: block;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: #444;
+    border-bottom: 1px solid #eee;
+}
+
+.mps-settings-nav a:hover,
+.mps-settings-nav a.active {
+    background: #fff;
+    color: #0073aa;
+    border-left: 4px solid #0073aa;
+    padding-left: 12px;
+}
+
+.mps-settings-nav .dashicons {
+    margin-right: 8px;
+    color: #666;
+}
+
+.mps-settings-content {
+    flex: 1;
+    padding: 20px;
+}
+
+.mps-tab-content {
+    display: none;
+}
+
+.mps-tab-content.active {
+    display: block;
+}
+
+/* Logs Page */
+.mps-logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.mps-logs-table-container {
+    margin-bottom: 20px;
+}
+
+.mps-logs-table th {
+    text-align: left;
+}
+
+.mps-no-logs {
+    background: #f5f5f5;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #eee;
+}
+
+/* Modal */
+.mps-modal {
+    display: none;
+    position: fixed;
+    z-index: 100000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
+.mps-modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+.mps-modal-close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.mps-modal-close:hover,
+.mps-modal-close:focus {
+    color: black;
+    text-decoration: none;
+}
+
+.mps-loader {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #0073aa;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 2s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.mps-progress-message {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.mps-sync-result {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 20px;
+} 
