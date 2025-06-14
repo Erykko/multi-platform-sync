@@ -196,7 +196,8 @@ add_action('admin_enqueue_scripts', function() {
  * Add dashboard widget for quick stats.
  */
 add_action('wp_dashboard_setup', function() {
-    if (current_user_can('manage_multi_platform_sync')) {
+    // Use fallback capability check
+    if (current_user_can('manage_multi_platform_sync') || current_user_can('manage_options')) {
         wp_add_dashboard_widget(
             'mps_dashboard_widget',
             __('Multi-Platform Sync Stats', 'multi-platform-sync'),
@@ -276,3 +277,20 @@ function mps_dashboard_widget_content() {
     </style>
     <?php
 }
+
+/**
+ * Fix capability issues on plugin activation.
+ */
+add_action('init', function() {
+    // Ensure capabilities are properly set for administrators
+    $admin_role = get_role('administrator');
+    if ($admin_role && !$admin_role->has_cap('manage_multi_platform_sync')) {
+        $admin_role->add_cap('manage_multi_platform_sync');
+    }
+    
+    // Also add to editor role
+    $editor_role = get_role('editor');
+    if ($editor_role && !$editor_role->has_cap('manage_multi_platform_sync')) {
+        $editor_role->add_cap('manage_multi_platform_sync');
+    }
+});

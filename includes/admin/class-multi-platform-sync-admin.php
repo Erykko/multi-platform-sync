@@ -182,11 +182,13 @@ class Multi_Platform_Sync_Admin {
         // Register admin notices
         $this->register_admin_notices();
         
-        // Main menu item
+        // Main menu item - use 'manage_options' as fallback capability
+        $capability = current_user_can('manage_multi_platform_sync') ? 'manage_multi_platform_sync' : 'manage_options';
+        
         add_menu_page(
             __('Multi-Platform Sync', 'multi-platform-sync'),
             __('Multi-Platform Sync', 'multi-platform-sync'),
-            'manage_multi_platform_sync',
+            $capability,
             $this->plugin_name,
             array($this, 'display_plugin_admin_page'),
             'dashicons-update',
@@ -198,7 +200,7 @@ class Multi_Platform_Sync_Admin {
             $this->plugin_name,
             __('Dashboard', 'multi-platform-sync'),
             __('Dashboard', 'multi-platform-sync'),
-            'manage_multi_platform_sync',
+            $capability,
             $this->plugin_name,
             array($this, 'display_plugin_admin_page')
         );
@@ -208,7 +210,7 @@ class Multi_Platform_Sync_Admin {
             $this->plugin_name,
             __('Analytics', 'multi-platform-sync'),
             __('Analytics', 'multi-platform-sync'),
-            'manage_multi_platform_sync',
+            $capability,
             $this->plugin_name . '-analytics',
             array($this, 'display_plugin_analytics_page')
         );
@@ -218,7 +220,7 @@ class Multi_Platform_Sync_Admin {
             $this->plugin_name,
             __('Settings', 'multi-platform-sync'),
             __('Settings', 'multi-platform-sync'),
-            'manage_multi_platform_sync',
+            $capability,
             $this->plugin_name . '-settings',
             array($this, 'display_plugin_settings_page')
         );
@@ -228,7 +230,7 @@ class Multi_Platform_Sync_Admin {
             $this->plugin_name,
             __('Sync Logs', 'multi-platform-sync'),
             __('Sync Logs', 'multi-platform-sync'),
-            'manage_multi_platform_sync',
+            $capability,
             $this->plugin_name . '-logs',
             array($this, 'display_plugin_logs_page')
         );
@@ -554,7 +556,7 @@ class Multi_Platform_Sync_Admin {
             return;
         }
 
-        if (!isset($_GET['export']) || !current_user_can('manage_multi_platform_sync')) {
+        if (!isset($_GET['export']) || !$this->current_user_can_manage()) {
             return;
         }
 
@@ -576,6 +578,16 @@ class Multi_Platform_Sync_Admin {
         
         echo $exported_data;
         exit;
+    }
+
+    /**
+     * Check if current user can manage the plugin.
+     *
+     * @since    1.1.0
+     * @return   bool    True if user can manage, false otherwise.
+     */
+    private function current_user_can_manage() {
+        return current_user_can('manage_multi_platform_sync') || current_user_can('manage_options');
     }
     
     /**
@@ -918,8 +930,8 @@ class Multi_Platform_Sync_Admin {
      * @since    1.1.0
      */
     public function display_plugin_admin_page() {
-        // Check user capability
-        if (!current_user_can('manage_multi_platform_sync')) {
+        // Check user capability with fallback
+        if (!$this->current_user_can_manage()) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'multi-platform-sync'));
         }
         
@@ -932,8 +944,8 @@ class Multi_Platform_Sync_Admin {
      * @since    1.1.0
      */
     public function display_plugin_analytics_page() {
-        // Check user capability
-        if (!current_user_can('manage_multi_platform_sync')) {
+        // Check user capability with fallback
+        if (!$this->current_user_can_manage()) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'multi-platform-sync'));
         }
         
@@ -946,8 +958,8 @@ class Multi_Platform_Sync_Admin {
      * @since    1.1.0
      */
     public function display_plugin_settings_page() {
-        // Check user capability
-        if (!current_user_can('manage_multi_platform_sync')) {
+        // Check user capability with fallback
+        if (!$this->current_user_can_manage()) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'multi-platform-sync'));
         }
         
@@ -960,8 +972,8 @@ class Multi_Platform_Sync_Admin {
      * @since    1.1.0
      */
     public function display_plugin_logs_page() {
-        // Check user capability
-        if (!current_user_can('manage_multi_platform_sync')) {
+        // Check user capability with fallback
+        if (!$this->current_user_can_manage()) {
             wp_die(__('You do not have sufficient permissions to access this page.', 'multi-platform-sync'));
         }
         

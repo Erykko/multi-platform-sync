@@ -35,11 +35,8 @@ class Multi_Platform_Sync_Activator {
         // Create options with default values if they don't exist
         self::create_default_options();
         
-        // Add capabilities to administrators
-        $role = get_role('administrator');
-        if ($role) {
-            $role->add_cap('manage_multi_platform_sync');
-        }
+        // Add capabilities to administrators and other roles
+        self::add_capabilities();
         
         // Create or update database tables
         self::create_or_update_tables();
@@ -58,6 +55,33 @@ class Multi_Platform_Sync_Activator {
         // Schedule queue cleanup
         if (!wp_next_scheduled('mps_cleanup_queue')) {
             wp_schedule_event(time(), 'daily', 'mps_cleanup_queue');
+        }
+    }
+
+    /**
+     * Add capabilities to user roles.
+     *
+     * @since    1.1.0
+     */
+    private static function add_capabilities() {
+        // Add capability to administrator role
+        $admin_role = get_role('administrator');
+        if ($admin_role) {
+            $admin_role->add_cap('manage_multi_platform_sync');
+        }
+
+        // Also add to super admin in multisite
+        if (is_multisite()) {
+            $super_admin_role = get_role('super_admin');
+            if ($super_admin_role) {
+                $super_admin_role->add_cap('manage_multi_platform_sync');
+            }
+        }
+
+        // Add to editor role as well (optional - can be removed if not desired)
+        $editor_role = get_role('editor');
+        if ($editor_role) {
+            $editor_role->add_cap('manage_multi_platform_sync');
         }
     }
     
@@ -219,6 +243,9 @@ class Multi_Platform_Sync_Activator {
         if (!wp_next_scheduled('mps_cleanup_logs')) {
             wp_schedule_event(time(), 'daily', 'mps_cleanup_logs');
         }
+
+        // Re-add capabilities in case they were lost
+        self::add_capabilities();
     }
     
     /**
