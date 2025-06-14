@@ -15,16 +15,20 @@ if (!defined('WPINC')) {
 }
 ?>
 
-<div class="wrap">
-    <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+<div class="wrap mps-admin-page">
+    <h1 class="screen-reader-text"><?php echo esc_html(get_admin_page_title()); ?></h1>
     
     <div class="mps-dashboard">
         <div class="mps-dashboard-header">
             <div class="mps-dashboard-heading">
-                <h2><?php esc_html_e('Sync Dashboard', 'multi-platform-sync'); ?></h2>
+                <h2><?php esc_html_e('Multi-Platform Sync Dashboard', 'multi-platform-sync'); ?></h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 14px;">
+                    <?php esc_html_e('Monitor and manage your data synchronization across platforms', 'multi-platform-sync'); ?>
+                </p>
             </div>
             <div class="mps-dashboard-actions">
-                <button id="mps-manual-sync" class="button button-primary">
+                <button id="mps-manual-sync" class="mps-button-primary">
+                    <span class="dashicons dashicons-update" style="margin-right: 8px; font-size: 16px; line-height: 1;"></span>
                     <?php esc_html_e('Run Manual Sync', 'multi-platform-sync'); ?>
                 </button>
             </div>
@@ -32,37 +36,63 @@ if (!defined('WPINC')) {
         
         <div class="mps-dashboard-content">
             <div class="mps-card">
-                <h3><?php esc_html_e('Status', 'multi-platform-sync'); ?></h3>
+                <h3>
+                    <span class="dashicons dashicons-admin-tools" style="margin-right: 8px; color: #667eea;"></span>
+                    <?php esc_html_e('System Status', 'multi-platform-sync'); ?>
+                </h3>
                 <div class="mps-status">
                     <?php
                     $webhook_url = get_option('mps_zapier_webhook_url', '');
                     $selected_forms = get_option('mps_gravity_forms_to_sync', array());
+                    $zapier_addon_detected = get_option('mps_gf_zapier_addon_detected', false);
                     
-                    if (empty($webhook_url)) {
-                        echo '<div class="mps-status-item mps-status-error">';
-                        echo '<span class="dashicons dashicons-warning"></span>';
-                        echo esc_html__('Zapier webhook URL is not configured.', 'multi-platform-sync');
+                    if ($zapier_addon_detected) {
+                        echo '<div class="mps-status-item mps-status-success">';
+                        echo '<span class="dashicons dashicons-yes-alt"></span>';
+                        echo '<div>';
+                        echo '<strong>' . esc_html__('Gravity Forms Zapier Add-on Detected', 'multi-platform-sync') . '</strong><br>';
+                        echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Using official add-on for Gravity Forms to Zapier integration', 'multi-platform-sync') . '</span>';
+                        echo '</div>';
                         echo '</div>';
                     } else {
-                        echo '<div class="mps-status-item mps-status-success">';
-                        echo '<span class="dashicons dashicons-yes"></span>';
-                        echo esc_html__('Zapier webhook URL is configured.', 'multi-platform-sync');
-                        echo '</div>';
-                    }
-                    
-                    if (empty($selected_forms)) {
-                        echo '<div class="mps-status-item mps-status-error">';
-                        echo '<span class="dashicons dashicons-warning"></span>';
-                        echo esc_html__('No Gravity Forms selected for syncing.', 'multi-platform-sync');
-                        echo '</div>';
-                    } else {
-                        echo '<div class="mps-status-item mps-status-success">';
-                        echo '<span class="dashicons dashicons-yes"></span>';
-                        echo esc_html(sprintf(
-                            _n('%d Gravity Form selected for syncing.', '%d Gravity Forms selected for syncing.', count($selected_forms), 'multi-platform-sync'),
-                            count($selected_forms)
-                        ));
-                        echo '</div>';
+                        if (empty($webhook_url)) {
+                            echo '<div class="mps-status-item mps-status-error">';
+                            echo '<span class="dashicons dashicons-warning"></span>';
+                            echo '<div>';
+                            echo '<strong>' . esc_html__('Zapier Webhook URL Missing', 'multi-platform-sync') . '</strong><br>';
+                            echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Configure webhook URL in settings to enable Zapier integration', 'multi-platform-sync') . '</span>';
+                            echo '</div>';
+                            echo '</div>';
+                        } else {
+                            echo '<div class="mps-status-item mps-status-success">';
+                            echo '<span class="dashicons dashicons-yes-alt"></span>';
+                            echo '<div>';
+                            echo '<strong>' . esc_html__('Zapier Integration Configured', 'multi-platform-sync') . '</strong><br>';
+                            echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Webhook URL is configured and ready', 'multi-platform-sync') . '</span>';
+                            echo '</div>';
+                            echo '</div>';
+                        }
+                        
+                        if (empty($selected_forms)) {
+                            echo '<div class="mps-status-item mps-status-warning">';
+                            echo '<span class="dashicons dashicons-info"></span>';
+                            echo '<div>';
+                            echo '<strong>' . esc_html__('No Forms Selected', 'multi-platform-sync') . '</strong><br>';
+                            echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Select forms in settings to enable automatic syncing', 'multi-platform-sync') . '</span>';
+                            echo '</div>';
+                            echo '</div>';
+                        } else {
+                            echo '<div class="mps-status-item mps-status-success">';
+                            echo '<span class="dashicons dashicons-yes-alt"></span>';
+                            echo '<div>';
+                            echo '<strong>' . esc_html(sprintf(
+                                _n('%d Form Selected', '%d Forms Selected', count($selected_forms), 'multi-platform-sync'),
+                                count($selected_forms)
+                            )) . '</strong><br>';
+                            echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Forms are configured for automatic syncing', 'multi-platform-sync') . '</span>';
+                            echo '</div>';
+                            echo '</div>';
+                        }
                     }
                     
                     $campaign_monitor_api_key = get_option('mps_campaign_monitor_api_key', '');
@@ -70,13 +100,19 @@ if (!defined('WPINC')) {
                     
                     if (empty($campaign_monitor_api_key) || empty($campaign_monitor_list_id)) {
                         echo '<div class="mps-status-item mps-status-warning">';
-                        echo '<span class="dashicons dashicons-warning"></span>';
-                        echo esc_html__('Campaign Monitor integration is not fully configured.', 'multi-platform-sync');
+                        echo '<span class="dashicons dashicons-email-alt"></span>';
+                        echo '<div>';
+                        echo '<strong>' . esc_html__('Campaign Monitor Setup Incomplete', 'multi-platform-sync') . '</strong><br>';
+                        echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Configure API key and list ID to enable email marketing integration', 'multi-platform-sync') . '</span>';
+                        echo '</div>';
                         echo '</div>';
                     } else {
                         echo '<div class="mps-status-item mps-status-success">';
-                        echo '<span class="dashicons dashicons-yes"></span>';
-                        echo esc_html__('Campaign Monitor integration is configured.', 'multi-platform-sync');
+                        echo '<span class="dashicons dashicons-email-alt"></span>';
+                        echo '<div>';
+                        echo '<strong>' . esc_html__('Campaign Monitor Ready', 'multi-platform-sync') . '</strong><br>';
+                        echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Email marketing integration is configured and active', 'multi-platform-sync') . '</span>';
+                        echo '</div>';
                         echo '</div>';
                     }
                     
@@ -87,13 +123,19 @@ if (!defined('WPINC')) {
                     
                     if (empty($quickbase_user_token) || empty($quickbase_realm) || empty($quickbase_app_id) || empty($quickbase_table_id)) {
                         echo '<div class="mps-status-item mps-status-warning">';
-                        echo '<span class="dashicons dashicons-warning"></span>';
-                        echo esc_html__('Quickbase integration is not fully configured.', 'multi-platform-sync');
+                        echo '<span class="dashicons dashicons-database"></span>';
+                        echo '<div>';
+                        echo '<strong>' . esc_html__('Quickbase Setup Incomplete', 'multi-platform-sync') . '</strong><br>';
+                        echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Complete configuration to enable database integration', 'multi-platform-sync') . '</span>';
+                        echo '</div>';
                         echo '</div>';
                     } else {
                         echo '<div class="mps-status-item mps-status-success">';
-                        echo '<span class="dashicons dashicons-yes"></span>';
-                        echo esc_html__('Quickbase integration is configured.', 'multi-platform-sync');
+                        echo '<span class="dashicons dashicons-database"></span>';
+                        echo '<div>';
+                        echo '<strong>' . esc_html__('Quickbase Ready', 'multi-platform-sync') . '</strong><br>';
+                        echo '<span style="font-size: 13px; opacity: 0.8;">' . esc_html__('Database integration is configured and active', 'multi-platform-sync') . '</span>';
+                        echo '</div>';
                         echo '</div>';
                     }
                     ?>
@@ -101,14 +143,21 @@ if (!defined('WPINC')) {
             </div>
             
             <div class="mps-card">
-                <h3><?php esc_html_e('Recent Sync Activity', 'multi-platform-sync'); ?></h3>
+                <h3>
+                    <span class="dashicons dashicons-chart-line" style="margin-right: 8px; color: #667eea;"></span>
+                    <?php esc_html_e('Recent Activity', 'multi-platform-sync'); ?>
+                </h3>
                 <?php
                 // Get the last 5 log entries
                 global $wpdb;
                 $table_name = $wpdb->prefix . 'mps_sync_logs';
                 
                 if ($wpdb->get_var("SHOW TABLES LIKE '$table_name'") != $table_name) {
-                    echo '<p>' . esc_html__('No sync logs available yet.', 'multi-platform-sync') . '</p>';
+                    echo '<div class="mps-no-logs">';
+                    echo '<span class="dashicons dashicons-info" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></span><br>';
+                    echo '<strong>' . esc_html__('No Activity Yet', 'multi-platform-sync') . '</strong><br>';
+                    echo '<span style="font-size: 14px; opacity: 0.7;">' . esc_html__('Sync logs will appear here once you start using the plugin', 'multi-platform-sync') . '</span>';
+                    echo '</div>';
                 } else {
                     $logs = $wpdb->get_results(
                         "SELECT * FROM $table_name ORDER BY timestamp DESC LIMIT 5",
@@ -116,85 +165,158 @@ if (!defined('WPINC')) {
                     );
                     
                     if (empty($logs)) {
-                        echo '<p>' . esc_html__('No sync logs available yet.', 'multi-platform-sync') . '</p>';
+                        echo '<div class="mps-no-logs">';
+                        echo '<span class="dashicons dashicons-info" style="font-size: 24px; margin-bottom: 10px; opacity: 0.5;"></span><br>';
+                        echo '<strong>' . esc_html__('No Activity Yet', 'multi-platform-sync') . '</strong><br>';
+                        echo '<span style="font-size: 14px; opacity: 0.7;">' . esc_html__('Sync logs will appear here once you start using the plugin', 'multi-platform-sync') . '</span>';
+                        echo '</div>';
                     } else {
-                        echo '<table class="widefat">';
+                        echo '<div class="mps-logs-table-container">';
+                        echo '<table class="wp-list-table widefat fixed striped">';
                         echo '<thead>';
                         echo '<tr>';
-                        echo '<th>' . esc_html__('Time', 'multi-platform-sync') . '</th>';
-                        echo '<th>' . esc_html__('Type', 'multi-platform-sync') . '</th>';
-                        echo '<th>' . esc_html__('Status', 'multi-platform-sync') . '</th>';
+                        echo '<th style="width: 140px;">' . esc_html__('Time', 'multi-platform-sync') . '</th>';
+                        echo '<th style="width: 100px;">' . esc_html__('Type', 'multi-platform-sync') . '</th>';
+                        echo '<th style="width: 80px;">' . esc_html__('Status', 'multi-platform-sync') . '</th>';
                         echo '<th>' . esc_html__('Message', 'multi-platform-sync') . '</th>';
                         echo '</tr>';
                         echo '</thead>';
                         echo '<tbody>';
                         
                         foreach ($logs as $log) {
-                            $time = date_i18n(get_option('date_format') . ' ' . get_option('time_format'), strtotime($log['timestamp']));
+                            $time = date_i18n('M j, g:i A', strtotime($log['timestamp']));
                             $status_class = $log['status'] === 'success' ? 'mps-success' : 'mps-error';
+                            $status_icon = $log['status'] === 'success' ? 'yes-alt' : 'warning';
                             
                             echo '<tr>';
-                            echo '<td>' . esc_html($time) . '</td>';
-                            echo '<td>' . esc_html($log['sync_type']) . '</td>';
-                            echo '<td class="' . esc_attr($status_class) . '">' . esc_html($log['status']) . '</td>';
-                            echo '<td>' . esc_html($log['message']) . '</td>';
+                            echo '<td><strong>' . esc_html($time) . '</strong></td>';
+                            echo '<td><span class="dashicons dashicons-admin-generic" style="margin-right: 5px; font-size: 14px;"></span>' . esc_html(ucfirst($log['sync_type'])) . '</td>';
+                            echo '<td class="' . esc_attr($status_class) . '">';
+                            echo '<span class="dashicons dashicons-' . esc_attr($status_icon) . '" style="margin-right: 5px; font-size: 14px;"></span>';
+                            echo esc_html(ucfirst($log['status']));
+                            echo '</td>';
+                            echo '<td>' . esc_html(wp_trim_words($log['message'], 15)) . '</td>';
                             echo '</tr>';
                         }
                         
                         echo '</tbody>';
                         echo '</table>';
+                        echo '</div>';
                         
-                        echo '<p class="mps-view-all-logs">';
-                        echo '<a href="' . esc_url(admin_url('admin.php?page=multi-platform-sync-logs')) . '">';
+                        echo '<div class="mps-view-all-logs">';
+                        echo '<a href="' . esc_url(admin_url('admin.php?page=multi-platform-sync-logs')) . '" class="button">';
+                        echo '<span class="dashicons dashicons-list-view" style="margin-right: 5px; font-size: 14px; line-height: 1;"></span>';
                         echo esc_html__('View All Logs', 'multi-platform-sync');
                         echo '</a>';
-                        echo '</p>';
+                        echo '</div>';
                     }
                 }
                 ?>
             </div>
             
             <div class="mps-card">
-                <h3><?php esc_html_e('Getting Started', 'multi-platform-sync'); ?></h3>
+                <h3>
+                    <span class="dashicons dashicons-lightbulb" style="margin-right: 8px; color: #667eea;"></span>
+                    <?php esc_html_e('Quick Start Guide', 'multi-platform-sync'); ?>
+                </h3>
                 <div class="mps-getting-started">
                     <ol>
                         <li>
-                            <strong><?php esc_html_e('Configure Zapier Integration', 'multi-platform-sync'); ?></strong>
-                            <p><?php esc_html_e('Create a Zap in Zapier that accepts webhook data from this plugin.', 'multi-platform-sync'); ?></p>
+                            <strong><?php esc_html_e('Configure Integrations', 'multi-platform-sync'); ?></strong>
+                            <p><?php esc_html_e('Set up your API credentials for Campaign Monitor and Quickbase in the settings page.', 'multi-platform-sync'); ?></p>
                         </li>
                         <li>
-                            <strong><?php esc_html_e('Set Up External Connections', 'multi-platform-sync'); ?></strong>
-                            <p><?php esc_html_e('Configure your Zapier actions to send data to Campaign Monitor and Quickbase.', 'multi-platform-sync'); ?></p>
+                            <strong><?php esc_html_e('Set Up Zapier Connection', 'multi-platform-sync'); ?></strong>
+                            <p><?php esc_html_e('Create a Zap in Zapier to connect your forms with external platforms using webhooks.', 'multi-platform-sync'); ?></p>
                         </li>
                         <li>
-                            <strong><?php esc_html_e('Select Gravity Forms', 'multi-platform-sync'); ?></strong>
-                            <p><?php esc_html_e('Choose which Gravity Forms should trigger the sync process.', 'multi-platform-sync'); ?></p>
+                            <strong><?php esc_html_e('Select Forms to Sync', 'multi-platform-sync'); ?></strong>
+                            <p><?php esc_html_e('Choose which Gravity Forms should trigger the synchronization process.', 'multi-platform-sync'); ?></p>
                         </li>
                         <li>
-                            <strong><?php esc_html_e('Test the Connection', 'multi-platform-sync'); ?></strong>
-                            <p><?php esc_html_e('Submit a test form entry or use the manual sync button to verify everything works.', 'multi-platform-sync'); ?></p>
+                            <strong><?php esc_html_e('Test Your Setup', 'multi-platform-sync'); ?></strong>
+                            <p><?php esc_html_e('Use the connection test tools and submit a test form to verify everything works correctly.', 'multi-platform-sync'); ?></p>
                         </li>
                     </ol>
                     
-                    <p>
-                        <a href="<?php echo esc_url(admin_url('admin.php?page=multi-platform-sync-settings')); ?>" class="button">
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #dee2e6;">
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=multi-platform-sync-settings')); ?>" class="mps-button-primary" style="margin-right: 10px;">
+                            <span class="dashicons dashicons-admin-settings" style="margin-right: 5px; font-size: 14px; line-height: 1;"></span>
                             <?php esc_html_e('Go to Settings', 'multi-platform-sync'); ?>
                         </a>
-                    </p>
+                        <a href="<?php echo esc_url(admin_url('admin.php?page=multi-platform-sync-analytics')); ?>" class="button">
+                            <span class="dashicons dashicons-chart-bar" style="margin-right: 5px; font-size: 14px; line-height: 1;"></span>
+                            <?php esc_html_e('View Analytics', 'multi-platform-sync'); ?>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="mps-sync-modal" class="mps-modal">
+<!-- Enhanced Modal -->
+<div id="mps-sync-modal" class="mps-modal" role="dialog" aria-labelledby="mps-modal-title" aria-hidden="true">
     <div class="mps-modal-content">
-        <span class="mps-modal-close">&times;</span>
-        <h3><?php esc_html_e('Sync Progress', 'multi-platform-sync'); ?></h3>
+        <span class="mps-modal-close" aria-label="<?php esc_attr_e('Close', 'multi-platform-sync'); ?>">&times;</span>
+        <h3 id="mps-modal-title"><?php esc_html_e('Sync Progress', 'multi-platform-sync'); ?></h3>
         <div id="mps-sync-progress">
-            <div class="mps-progress-message"><?php esc_html_e('Syncing data...', 'multi-platform-sync'); ?></div>
-            <div class="mps-loader"></div>
+            <div class="mps-progress-message"><?php esc_html_e('Initializing sync process...', 'multi-platform-sync'); ?></div>
+            <div class="mps-loader" role="status" aria-label="<?php esc_attr_e('Loading', 'multi-platform-sync'); ?>"></div>
             <div id="mps-sync-result"></div>
         </div>
     </div>
-</div> 
+</div>
+
+<style>
+/* Additional inline styles for better visual hierarchy */
+.mps-status-item div {
+    flex: 1;
+}
+
+.mps-status-item strong {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 14px;
+}
+
+.mps-logs-table-container {
+    overflow-x: auto;
+}
+
+.mps-getting-started ol li {
+    position: relative;
+    padding-left: 0;
+}
+
+.mps-getting-started ol li::before {
+    content: counter(list-item);
+    counter-increment: list-item;
+    position: absolute;
+    left: -30px;
+    top: 0;
+    background: #667eea;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) {
+    .mps-getting-started ol {
+        margin-left: 0;
+    }
+    
+    .mps-getting-started ol li::before {
+        position: relative;
+        left: 0;
+        margin-right: 10px;
+        margin-bottom: 5px;
+    }
+}
+</style>
